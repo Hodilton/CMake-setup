@@ -17,30 +17,74 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # =====================================
-# Source files
-# =====================================
-file(GLOB_RECURSE SOURCES "src/*.cpp")
-
-# =====================================
-# Executable target
-# =====================================
-add_executable(${PROJECT_NAME} ${SOURCES})
-
-# =====================================
 # Threads library
 # =====================================
 find_package(Threads REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
 
 # =====================================
-# Build type flags
+# Auto-detect and create targets
 # =====================================
-if(CMAKE_BUILD_TYPE STREQUAL "debug")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG_MODE)
-    target_compile_options(${PROJECT_NAME} PRIVATE -g -O0 -Wall -Wextra -Wpedantic -Wshadow -Wformat=2)
-elseif(CMAKE_BUILD_TYPE STREQUAL "release")
-    target_compile_options(${PROJECT_NAME} PRIVATE -O3 -DNDEBUG -Wall -Wextra -Wpedantic)
-endif()
+
+# Find all single .cpp files in src/ root
+file(GLOB SIMPLE_SOURCES "src/*.cpp")
+
+# Create executables for simple single-file targets
+foreach(SRC_FILE ${SIMPLE_SOURCES})
+    # Get filename without path and extension
+    get_filename_component(TARGET_NAME ${SRC_FILE} NAME_WE)
+    
+    # Create executable
+    add_executable(${TARGET_NAME} ${SRC_FILE})
+    
+    # Link threads
+    target_link_libraries(${TARGET_NAME} PRIVATE Threads::Threads)
+    
+    # Apply compilation flags
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        target_compile_definitions(${TARGET_NAME} PRIVATE DEBUG_MODE)
+        target_compile_options(${TARGET_NAME} PRIVATE -g -O0 -Wall -Wextra -Wpedantic -Wshadow -Wformat=2)
+    elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+        target_compile_options(${TARGET_NAME} PRIVATE -O3 -DNDEBUG -Wall -Wextra -Wpedantic)
+    endif()
+endforeach()
+
+# =====================================
+# Auto-detect multi-file projects (subdirectories in src/)
+# =====================================
+file(GLOB SUBDIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
+foreach(SUBDIR ${SUBDIRS})
+    if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR})
+        # Look for main.cpp or ${SUBDIR}.cpp as entry point
+        set(MAIN_FILE "")
+        if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR}/main.cpp)
+            set(MAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR}/main.cpp)
+        elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR}/${SUBDIR}.cpp)
+            set(MAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR}/${SUBDIR}.cpp)
+        endif()
+        
+        if(MAIN_FILE)
+            # Find all .cpp files in this subdirectory
+            file(GLOB_RECURSE PROJECT_SOURCES "src/${SUBDIR}/*.cpp")
+            
+            # Create executable
+            add_executable(${SUBDIR} ${PROJECT_SOURCES})
+            
+            # Include directories
+            target_include_directories(${SUBDIR} PRIVATE src/${SUBDIR})
+            
+            # Link threads
+            target_link_libraries(${SUBDIR} PRIVATE Threads::Threads)
+            
+            # Apply compilation flags
+            if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+                target_compile_definitions(${SUBDIR} PRIVATE DEBUG_MODE)
+                target_compile_options(${SUBDIR} PRIVATE -g -O0 -Wall -Wextra -Wpedantic -Wshadow -Wformat=2)
+            elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+                target_compile_options(${SUBDIR} PRIVATE -O3 -DNDEBUG -Wall -Wextra -Wpedantic)
+            endif()
+        endif()
+    endif()
+endforeach()
 
 # =====================================
 # Information messages
@@ -48,4 +92,3 @@ endif()
 message(STATUS "Project: ${PROJECT_NAME}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "C++ standard: ${CMAKE_CXX_STANDARD}")
-message(STATUS "Sources: ${SOURCES}")

@@ -1,0 +1,150 @@
+# =============================================================================
+# BASE CONFIGURATION
+# =============================================================================
+BasedOnStyle: LLVM                          # Base style to inherit from
+Standard: Latest                            # Use latest C++ standard
+
+# =============================================================================
+# BRACE WRAPPING AND FORMATTING
+# =============================================================================
+BreakBeforeBraces: Attach                   # Opening brace on same line as function
+BraceWrapping:                              # Detailed brace wrapping rules
+  AfterCaseLabel: true                      # Break after case labels
+  AfterClass: true                          # Break after class definition
+  AfterControlStatement: Always             # Always break after control statements
+  AfterEnum: true                           # Break after enum
+  AfterExternBlock: true                    # Break after extern blocks
+  AfterNamespace: true                      # Break after namespace
+  AfterObjCDeclaration: true                # Break after Objective-C declarations
+  AfterStruct: true                         # Break after struct
+  AfterUnion: true                          # Break after union
+  BeforeCatch: true                         # Break before catch
+  BeforeElse: true                          # Break before else
+  BeforeLambdaBody: false                   # Don't break before lambda body
+  BeforeWhile: true                         # Break before while
+  IndentBraces: false                       # Don't indent braces
+  SplitEmptyFunction: false                 # Don't split empty functions
+  SplitEmptyRecord: false                   # Don't split empty records
+
+# =============================================================================
+# INDENTATION AND SPACING
+# =============================================================================
+AccessModifierOffset: -4                    # Indent access modifiers relative to access specifiers
+AlignConsecutiveAssignments: true           # Align consecutive assignments
+AlignConsecutiveBitFields: None             # Don't align bit fields
+AlignConsecutiveDeclarations: None          # Don't align declarations
+AlignConsecutiveMacros: None                # Don't align macros
+ColumnLimit: 120                            # Maximum line length
+ContinuationIndentWidth: 4                  # Indentation for continuation lines
+IndentCaseBlocks: false                     # Don't indent case blocks
+IndentCaseLabels: true                      # Indent case labels
+IndentExternBlock: NoIndent                 # Don't indent extern blocks
+IndentGotoLabels: true                      # Indent goto labels
+IndentPPDirectives: BeforeHash              # Indent preprocessor directives
+IndentRequires: true                        # Indent requires clauses
+IndentWidth: 4                              # Number of spaces for indentation
+IndentWrappedFunctionNames: false           # Don't indent wrapped function names
+NamespaceIndentation: All                   # Indent namespace contents
+ObjCBlockIndentWidth: 4                     # Objective-C block indent width
+TabWidth: 4                                 # Width of tab characters
+UseTab: Never                               # Never use tabs, always spaces
+
+# =============================================================================
+# ALIGNMENT OPTIONS
+# =============================================================================
+AlignAfterOpenBracket: AlwaysBreak          # Always break after open bracket
+AlignEscapedNewlines: DontAlign             # Don't align escaped newlines
+AlignOperands: DontAlign                    # Don't align operands
+AlignTrailingComments: true                 # Align trailing comments
+DerivePointerAlignment: false               # Don't derive pointer alignment
+PointerAlignment: Left                      # Align pointers to the left
+SpaceAroundPointerQualifiers: Default       # Default spacing around pointer qualifiers
+
+# =============================================================================
+# ARGUMENT AND PARAMETER PACKING
+# =============================================================================
+AllowAllArgumentsOnNextLine: false          # Don't allow all arguments on next line
+AllowAllParametersOfDeclarationOnNextLine: false  # Don't allow all parameters on next line
+BinPackArguments: false                     # Don't bin pack arguments
+BinPackParameters: false                    # Don't bin pack parameters
+
+# =============================================================================
+# ⚡ SHORT STATEMENT FORMATTING
+# =============================================================================
+AllowShortBlocksOnASingleLine: Empty        # Allow empty blocks on single line
+AllowShortCaseLabelsOnASingleLine: true     # Allow short case labels on single line
+AllowShortEnumsOnASingleLine: false         # Don't allow short enums on single line
+AllowShortFunctionsOnASingleLine: None      # Don't allow short functions on single line
+AllowShortIfStatementsOnASingleLine: Never  # Never allow short if statements on single line
+AllowShortLambdasOnASingleLine: Inline      # Allow short lambdas inline
+AllowShortLoopsOnASingleLine: false         # Don't allow short loops on single line
+
+# =============================================================================
+# LINE BREAKING
+# =============================================================================
+AlwaysBreakAfterReturnType: None            # Don't always break after return type
+AlwaysBreakBeforeMultilineStrings: false    # Don't break before multiline strings
+AlwaysBreakTemplateDeclarations: Yes        # Always break template declarations
+BreakBeforeBinaryOperators: None            # Don't break before binary operators
+BreakBeforeConceptDeclarations: true        # Break before concept declarations
+BreakBeforeTernaryOperators: true           # Break before ternary operators
+BreakConstructorInitializers: AfterColon    # Break constructor initializers after colon
+BreakInheritanceList: AfterColon            # Break inheritance list after colon
+BreakStringLiterals: true                   # Allow breaking string literals
+
+# =============================================================================
+# EMPTY LINES AND WHITESPACE
+# =============================================================================
+EmptyLineBeforeAccessModifier: LogicalBlock # Empty line before access modifier
+InsertNewlineAtEndOfFile: true              # Insert newline at end of file
+KeepEmptyLinesAtTheStartOfBlocks: false     # Remove empty lines at start of blocks
+MaxEmptyLinesToKeep: 1                      # Maximum number of consecutive empty lines
+
+# =============================================================================
+# COMMENTS AND SPACES
+# =============================================================================
+ReflowComments: true                        # Reflow comments
+SpacesBeforeTrailingComments: 1             # Spaces before trailing comments
+SpaceAfterCStyleCast: false                 # No space after C-style cast
+SpaceAfterLogicalNot: false                 # No space after logical not
+SpaceAfterTemplateKeyword: false            # No space after template keyword
+SpaceBeforeAssignmentOperators: true        # Space before assignment operators
+SpaceBeforeCaseColon: false                 # No space before case colon
+SpaceBeforeCpp11BracedList: false           # No space before C++11 braced list
+SpaceBeforeCtorInitializerColon: true       # Space before constructor initializer colon
+SpaceBeforeInheritanceColon: true           # Space before inheritance colon
+SpaceBeforeParens: ControlStatements        # Space before parentheses for control statements
+SpaceBeforeRangeBasedForLoopColon: true     # Space before range-based for loop colon
+SpaceBeforeSquareBrackets: false            # No space before square brackets
+SpaceInEmptyBlock: false                    # No space in empty blocks
+SpaceInEmptyParentheses: false              # No space in empty parentheses
+SpacesInAngles: false                       # No spaces in angle brackets
+SpacesInCStyleCastParentheses: false        # No spaces in C-style cast parentheses
+SpacesInConditionalStatement: false         # No spaces in conditional statements
+SpacesInContainerLiterals: false            # No spaces in container literals
+SpacesInParentheses: false                  # No spaces in parentheses
+SpacesInSquareBrackets: false               # No spaces in square brackets
+
+# =============================================================================
+# INCLUDE AND IMPORT HANDLING
+# =============================================================================
+IncludeBlocks: Preserve                               # Preserve include blocks
+SortIncludes: Never                                    # Don't sort includes
+SortUsingDeclarations: true                           # Sort using declarations
+
+# =============================================================================
+# MISCELLANEOUS
+# =============================================================================
+BitFieldColonSpacing: Both                            # Space around bit field colons
+CompactNamespaces: false                              # Don't compact namespaces
+ConstructorInitializerAllOnOneLineOrOnePerLine: true  # Constructor initializers one line or one per line
+Cpp11BracedListStyle: true                            # Use C++11 braced list style
+DeriveLineEnding: true                                # Derive line ending style
+FixNamespaceComments: false                           # Don't fix namespace comments
+ObjCBinPackProtocolList: Never                        # Don't bin pack Objective-C protocol list
+ObjCBreakBeforeNestedBlockParam: false                # Don't break before nested block parameters
+ObjCSpaceAfterProperty: false                         # No space after Objective-C properties
+ObjCSpaceBeforeProtocolList: true                     # Space before Objective-C protocol list
+WhitespaceSensitiveMacros:                            # Whitespace sensitive macros
+  - PRAGMA_WARNING_DISABLE_GCC
+  - PRAGMA_WARNING_DISABLE_MSVC

@@ -160,6 +160,14 @@ install: build
 uninstall:
 	@rm -f $(BIN_DIR)/$(BUILD_TYPE)/$(TARGET)
 	@printf "${RED}=== [$(TARGET)] Removed from $(BIN_DIR)/$(BUILD_TYPE)/ ===${NC}\n"
+	@if [ -d "$(BIN_DIR)/$(BUILD_TYPE)" ] && [ -z "$$(ls -A $(BIN_DIR)/$(BUILD_TYPE))" ]; then \
+		rmdir "$(BIN_DIR)/$(BUILD_TYPE)"; \
+		printf "${YELLOW}=== Removed empty directory $(BIN_DIR)/$(BUILD_TYPE)/ ===${NC}\n"; \
+	fi
+	@if [ -d "$(BIN_DIR)" ] && [ -z "$$(ls -A $(BIN_DIR))" ]; then \
+		rmdir "$(BIN_DIR)"; \
+		printf "${YELLOW}=== Removed empty directory $(BIN_DIR)/ ===${NC}\n"; \
+	fi
 
 sysinstall: build
 	@sudo cp $(BUILD_DIR_BASE)/$(BUILD_TYPE)/$(TARGET) /usr/local/bin/

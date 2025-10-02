@@ -22,6 +22,20 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(Threads REQUIRED)
 
 # =====================================
+# Helper function for target setup
+# =====================================
+function(setup_target TARGET_NAME)
+    target_link_libraries(${TARGET_NAME} PRIVATE Threads::Threads)
+    
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        target_compile_definitions(${TARGET_NAME} PRIVATE DEBUG_MODE)
+        target_compile_options(${TARGET_NAME} PRIVATE -g -O0 -Wall -Wextra -Wpedantic -Wshadow -Wformat=2)
+    elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+        target_compile_options(${TARGET_NAME} PRIVATE -O3 -DNDEBUG -Wall -Wextra -Wpedantic)
+    endif()
+endfunction()
+
+# =====================================
 # Auto-detect and create targets
 # =====================================
 
@@ -36,16 +50,8 @@ foreach(SRC_FILE ${SIMPLE_SOURCES})
     # Create executable
     add_executable(${TARGET_NAME} ${SRC_FILE})
     
-    # Link threads
-    target_link_libraries(${TARGET_NAME} PRIVATE Threads::Threads)
-    
-    # Apply compilation flags
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        target_compile_definitions(${TARGET_NAME} PRIVATE DEBUG_MODE)
-        target_compile_options(${TARGET_NAME} PRIVATE -g -O0 -Wall -Wextra -Wpedantic -Wshadow -Wformat=2)
-    elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-        target_compile_options(${TARGET_NAME} PRIVATE -O3 -DNDEBUG -Wall -Wextra -Wpedantic)
-    endif()
+    # Setup target with common configuration
+    setup_target(${TARGET_NAME})
 endforeach()
 
 # =====================================
@@ -53,13 +59,13 @@ endforeach()
 # =====================================
 file(GLOB SUBDIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
 foreach(SUBDIR ${SUBDIRS})
-    if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR})
+    if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR}")
         # Look for main.cpp or ${SUBDIR}.cpp as entry point
         set(MAIN_FILE "")
-        if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR}/main.cpp)
-            set(MAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR}/main.cpp)
-        elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR}/${SUBDIR}.cpp)
-            set(MAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR}/${SUBDIR}.cpp)
+        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR}/main.cpp")
+            set(MAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR}/main.cpp")
+        elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR}/${SUBDIR}.cpp")
+            set(MAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/src/${SUBDIR}/${SUBDIR}.cpp")
         endif()
         
         if(MAIN_FILE)
@@ -70,18 +76,10 @@ foreach(SUBDIR ${SUBDIRS})
             add_executable(${SUBDIR} ${PROJECT_SOURCES})
             
             # Include directories
-            target_include_directories(${SUBDIR} PRIVATE src/${SUBDIR})
+            target_include_directories(${SUBDIR} PRIVATE "src/${SUBDIR}")
             
-            # Link threads
-            target_link_libraries(${SUBDIR} PRIVATE Threads::Threads)
-            
-            # Apply compilation flags
-            if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-                target_compile_definitions(${SUBDIR} PRIVATE DEBUG_MODE)
-                target_compile_options(${SUBDIR} PRIVATE -g -O0 -Wall -Wextra -Wpedantic -Wshadow -Wformat=2)
-            elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-                target_compile_options(${SUBDIR} PRIVATE -O3 -DNDEBUG -Wall -Wextra -Wpedantic)
-            endif()
+            # Setup target with common configuration
+            setup_target(${SUBDIR})
         endif()
     endif()
 endforeach()

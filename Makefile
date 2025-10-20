@@ -68,19 +68,31 @@ detect:
 	@if [ -z "$(SIMPLE_TARGETS)" ]; then \
 		printf "  ${RED}None found${NC}\n"; \
 	else \
-		$(foreach t,$(SIMPLE_TARGETS),printf "  ${GREEN}$(t)${NC} (from src/$(t).cpp)\n";) \
+		echo "$(SIMPLE_TARGETS)" | tr ' ' '\n' | while read t; do \
+			if [ -n "$$t" ]; then \
+				printf "  ${GREEN}$$t${NC} (from src/$$t.cpp)\n"; \
+			fi; \
+		done; \
 	fi
 	@printf "${YELLOW}Multi-file targets:${NC}\n"
 	@if [ -z "$(MULTI_TARGETS)" ]; then \
 		printf "  ${RED}None found${NC}\n"; \
 	else \
-		$(foreach t,$(MULTI_TARGETS),printf "  ${GREEN}$(t)${NC} (from src/$(t)/)\n";) \
+		echo "$(MULTI_TARGETS)" | tr ' ' '\n' | while read t; do \
+			if [ -n "$$t" ]; then \
+				printf "  ${GREEN}$$t${NC} (from src/$$t/)\n"; \
+			fi; \
+		done; \
 	fi
 	@printf "${YELLOW}All available targets:${NC}\n"
 	@if [ -z "$(ALL_TARGETS)" ]; then \
 		printf "  ${RED}No targets found${NC}\n"; \
 	else \
-		$(foreach t,$(ALL_TARGETS),printf "  $(t)\n";) \
+		echo "$(ALL_TARGETS)" | tr ' ' '\n' | while read t; do \
+			if [ -n "$$t" ]; then \
+				printf "  $$t\n"; \
+			fi; \
+		done; \
 	fi
 	@printf "${BLUE}============================${NC}\n"
 

@@ -1,228 +1,219 @@
 # ============================
-# Project basics
+# Project Configuration
 # ============================
-PROJECT ?= project1
+PROJECT ?= default_project
 
 # ============================
-# Auto-detect all targets (single-file and multi-file)
+# Auto-detection of targets
 # ============================
-# Find all .cpp files in src/ root (single-file targets)
 SIMPLE_SOURCES := $(wildcard src/*.cpp)
 SIMPLE_TARGETS := $(basename $(notdir $(SIMPLE_SOURCES)))
 
-# Find all subdirectories in src/ (potential multi-file projects)
-SUBDIRS := $(wildcard src/*/)
-MULTI_TARGETS := $(notdir $(patsubst src/%/,%,$(SUBDIRS)))
+SUBDIRS 		:= $(wildcard src/*/ .)
+MULTI_TARGETS 	:= $(filter-out .,$(notdir $(patsubst %/,%,$(filter %/,$(SUBDIRS)))))
 
-# Combine all targets
-ALL_TARGETS := $(SIMPLE_TARGETS) $(MULTI_TARGETS)
-
-# Set default target to first detected
-TARGET ?= $(firstword $(ALL_TARGETS))
+ALL_TARGETS 	:= $(sort $(SIMPLE_TARGETS) $(MULTI_TARGETS))
+TARGET 			?= $(firstword $(ALL_TARGETS))
 
 # ============================
-# Build type and directories
+# Build Configuration with persistence
 # ============================
-BUILD_TYPE ?= debug
-BUILD_DIR_BASE = build
-LAST_FILE = $(BUILD_DIR_BASE)/.last_build_type
-LAST_TARGET = $(BUILD_DIR_BASE)/.last_target
+BUILD_TYPE 		?= debug
+BUILD_DIR_BASE 	:= build
+BIN_DIR_BASE 	:= bin
+
+LAST_BUILD_FILE 	:= $(BUILD_DIR_BASE)/.last_build_type
+LAST_TARGET_FILE 	:= $(BUILD_DIR_BASE)/.last_target
+
+# Ensure build dir exists for last files
+$(shell mkdir -p $(BUILD_DIR_BASE))
+
+# Resolve effective target and build type (from last or default)
+EFFECTIVE_TARGET := $(shell [ -f "$(LAST_TARGET_FILE)" ] && cat "$(LAST_TARGET_FILE)" || echo "$(TARGET)")
+EFFECTIVE_BUILD_TYPE := $(shell [ -f "$(LAST_BUILD_FILE)" ] && cat "$(LAST_BUILD_FILE)" || echo "$(BUILD_TYPE)")
 
 # ============================
-# Parallel build jobs
+# Output verbosity control
+# ============================
+VERBOSE ?= 0
+
+# ============================
+# Build Jobs
 # ============================
 ifeq ($(OS),Windows_NT)
     JOBS ?= 1
 else
-    JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu)
+    JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 endif
 
 # ============================
-# Colors
+# Color Definitions (Easy to customize)
 # ============================
-GREEN  = \033[0;32m
-YELLOW = \033[1;33m
-RED    = \033[0;31m
-BLUE   = \033[0;34m
-NC     = \033[0m
+COLOR1 := \033[0;36m  # Cyan
+COLOR2 := \033[0;32m  # Green
+COLOR3 := \033[1;33m  # Yellow
+COLOR4 := \033[0;34m  # Blue
+COLOR5 := \033[0;31m  # Red
+NC     := \033[0m     # No Color
 
-.PHONY: help all build debug release run clean rerun rebuild refresh install uninstall sysinstall sysuninstall dist detect $(ALL_TARGETS)
+# ============================
+# Phony targets
+# ============================
+.PHONY: help all build debug release run clean rerun rebuild refresh detect $(ALL_TARGETS)
 
 # ============================
 # Default target
 # ============================
-all: build
+all: help
 
 # ============================
-# Auto-generated targets for ALL detected projects
+# Target detection
+# ============================
+detect:
+	@echo "$(COLOR1)=== Auto-detected Targets ===$(NC)"
+	@echo "$(COLOR3)Single-file targets:$(NC)"
+	@if [ -n "$(SIMPLE_TARGETS)" ]; then \
+		for target in $(SIMPLE_TARGETS); do \
+			echo "  $(COLOR2)$$target$(NC) (from src/$$target.cpp)"; \
+		done; \
+	else \
+		echo "  $(COLOR5)None found$(NC)"; \
+	fi
+	@echo "$(COLOR3)Multi-file targets:$(NC)"
+	@if [ -n "$(MULTI_TARGETS)" ]; then \
+		for target in $(MULTI_TARGETS); do \
+			echo "  $(COLOR2)$$target$(NC) (from src/$$target/)"; \
+		done; \
+	else \
+		echo "  $(COLOR5)None found$(NC)"; \
+	fi
+	@echo "$(COLOR3)All available targets:$(NC)"
+	@if [ -n "$(ALL_TARGETS)" ]; then \
+		for target in $(ALL_TARGETS); do \
+			echo "  $$target"; \
+		done; \
+	else \
+		echo "  $(COLOR5)No targets found$(NC)"; \
+	fi
+	@echo "$(COLOR1)============================$(NC)"
+
+# ============================
+# Individual targets
 # ============================
 $(ALL_TARGETS):
 	@$(MAKE) --no-print-directory TARGET=$@ build
 
 # ============================
-# Detect target - show all auto-found targets
+# Build configuration
 # ============================
-detect:
-	@printf "${BLUE}=== Auto-detected targets ===${NC}\n"
-	@printf "${YELLOW}Single-file targets:${NC}\n"
-	@if [ -z "$(SIMPLE_TARGETS)" ]; then \
-		printf "  ${RED}None found${NC}\n"; \
-	else \
-		echo "$(SIMPLE_TARGETS)" | tr ' ' '\n' | while read t; do \
-			if [ -n "$$t" ]; then \
-				printf "  ${GREEN}$$t${NC} (from src/$$t.cpp)\n"; \
-			fi; \
-		done; \
-	fi
-	@printf "${YELLOW}Multi-file targets:${NC}\n"
-	@if [ -z "$(MULTI_TARGETS)" ]; then \
-		printf "  ${RED}None found${NC}\n"; \
-	else \
-		echo "$(MULTI_TARGETS)" | tr ' ' '\n' | while read t; do \
-			if [ -n "$$t" ]; then \
-				printf "  ${GREEN}$$t${NC} (from src/$$t/)\n"; \
-			fi; \
-		done; \
-	fi
-	@printf "${YELLOW}All available targets:${NC}\n"
-	@if [ -z "$(ALL_TARGETS)" ]; then \
-		printf "  ${RED}No targets found${NC}\n"; \
-	else \
-		echo "$(ALL_TARGETS)" | tr ' ' '\n' | while read t; do \
-			if [ -n "$$t" ]; then \
-				printf "  $$t\n"; \
-			fi; \
-		done; \
-	fi
-	@printf "${BLUE}============================${NC}\n"
-
-# ============================
-# Build target
-# ============================
-build:
-	@printf "${YELLOW}=== [$(TARGET)] Building $(BUILD_TYPE) ===${NC}\n"
-	@cmake --preset $(BUILD_TYPE) -DPROJECT_NAME=$(PROJECT)
-	@cmake --build --preset $(BUILD_TYPE) --target $(TARGET) -- -j$(JOBS)
-	@echo $(BUILD_TYPE) > $(LAST_FILE)
-	@echo $(TARGET) > $(LAST_TARGET)
-	@printf "${GREEN}=== [$(TARGET)] Build finished ===${NC}\n"
-
 debug:
 	@$(MAKE) --no-print-directory BUILD_TYPE=debug build
 
 release:
 	@$(MAKE) --no-print-directory BUILD_TYPE=release build
 
+build:
+ifeq ($(TARGET),)
+	$(error No target specified and none auto-detected. Run 'make detect' to see available targets.)
+endif
+	@echo "$(COLOR1)[ BUILD ]$(NC) Target: $(COLOR2)$(TARGET)$(NC) | Mode: $(COLOR3)$(BUILD_TYPE)$(NC)"
+	@mkdir -p $(BIN_DIR_BASE)/$(BUILD_TYPE)
+	@if [ "$(VERBOSE)" = "1" ]; then \
+		cmake --preset $(BUILD_TYPE) -DPROJECT_NAME=$(PROJECT); \
+	else \
+		cmake --preset $(BUILD_TYPE) -DPROJECT_NAME=$(PROJECT) >/dev/null 2>&1; \
+	fi
+	@if [ "$(VERBOSE)" = "1" ]; then \
+		cmake --build --preset $(BUILD_TYPE) --target $(TARGET) -- -j$(JOBS); \
+	else \
+		cmake --build --preset $(BUILD_TYPE) --target $(TARGET) -- -j$(JOBS) --quiet; \
+	fi
+	@echo "$(BUILD_TYPE)" > "$(LAST_BUILD_FILE)"
+	@echo "$(TARGET)" > "$(LAST_TARGET_FILE)"
+	@echo "$(COLOR2)[ DONE  ]$(NC) Built target $(COLOR2)$(TARGET)$(NC) in $(COLOR3)$(BUILD_TYPE)$(NC) mode"
+
 # ============================
-# Run target
+# Run targets
 # ============================
 run:
-	@bt=$$( [ -f $(LAST_FILE) ] && cat $(LAST_FILE) || echo $(BUILD_TYPE) ); \
-	tgt=$$( [ -f $(LAST_TARGET) ] && cat $(LAST_TARGET) || echo $(TARGET) ); \
-	bin_path="$(BUILD_DIR_BASE)/$$bt/$$tgt"; \
-	if [ ! -x "$$bin_path" ]; then \
-	  printf "${RED}Binary not found for $$tgt ($$bt). Building...${NC}\n"; \
-	  $(MAKE) --no-print-directory BUILD_TYPE=$$bt TARGET=$$tgt build; \
+	@if [ "$(TARGET)" = "$(firstword $(ALL_TARGETS))" ] && [ -n "$(EFFECTIVE_TARGET)" ]; then \
+		bt=$$( [ -f "$(LAST_BUILD_FILE)" ] && cat "$(LAST_BUILD_FILE)" || echo "$(BUILD_TYPE)" ); \
+		tgt="$(EFFECTIVE_TARGET)"; \
+	else \
+		bt="$(BUILD_TYPE)"; \
+		tgt="$(TARGET)"; \
 	fi; \
-	printf "${YELLOW}=== [$$tgt] Running $$bt build ===${NC}\n"; \
+	bin_path="$(BIN_DIR_BASE)/$$bt/$$tgt"; \
+	if [ ! -x "$$bin_path" ]; then \
+		echo "$(COLOR5)[ INFO  ]$(NC) Binary not found for $$tgt ($$bt). Building..."; \
+		$(MAKE) --no-print-directory BUILD_TYPE=$$bt TARGET=$$tgt VERBOSE=$(VERBOSE) build; \
+		bin_path="$(BIN_DIR_BASE)/$$bt/$$tgt"; \
+	fi; \
+	echo "$(COLOR4)[ RUN   ]$(NC) Target: $(COLOR2)$$tgt$(NC) | Mode: $(COLOR3)$$bt$(NC)"; \
 	"$$bin_path"
 
-# ============================
-# Refresh target
-# ============================
 refresh:
-	@bt=$$( [ -f $(LAST_FILE) ] && cat $(LAST_FILE) || echo $(BUILD_TYPE) ); \
-	tgt=$$( [ -f $(LAST_TARGET) ] && cat $(LAST_TARGET) || echo $(TARGET) ); \
-	bin_path="$(BUILD_DIR_BASE)/$$bt/$$tgt"; \
-	if $(MAKE) --no-print-directory -s BUILD_TYPE=$$bt TARGET=$$tgt build > /dev/null 2>&1; then \
-	  printf "${YELLOW}=== [$$tgt] Running $$bt build ===${NC}\n"; \
-	  "$$bin_path"; \
+	@if [ "$(TARGET)" = "$(firstword $(ALL_TARGETS))" ] && [ -n "$(EFFECTIVE_TARGET)" ]; then \
+		bt=$$( [ -f "$(LAST_BUILD_FILE)" ] && cat "$(LAST_BUILD_FILE)" || echo "$(BUILD_TYPE)" ); \
+		tgt="$(EFFECTIVE_TARGET)"; \
 	else \
-	  printf "${RED}Build failed. Showing errors:${NC}\n"; \
-	  $(MAKE) --no-print-directory BUILD_TYPE=$$bt TARGET=$$tgt build; \
-	fi
+		bt="$(BUILD_TYPE)"; \
+		tgt="$(TARGET)"; \
+	fi; \
+	echo "$(COLOR1)[ REFRESH ]$(NC) Target: $(COLOR2)$$tgt$(NC) | Mode: $(COLOR3)$$bt$(NC)"; \
+	$(MAKE) --no-print-directory BUILD_TYPE=$$bt TARGET=$$tgt VERBOSE=$(VERBOSE) build; \
+	$(MAKE) --no-print-directory BUILD_TYPE=$$bt TARGET=$$tgt VERBOSE=$(VERBOSE) run
 
 # ============================
-# Clean / Rebuild
+# Clean and rebuild
 # ============================
 clean:
-	@rm -rf $(BUILD_DIR_BASE)
-
-rerun:
-	@bt=$$( [ -f $(LAST_FILE) ] && cat $(LAST_FILE) || echo $(BUILD_TYPE) ); \
-	tgt=$$( [ -f $(LAST_TARGET) ] && cat $(LAST_TARGET) || echo $(TARGET) ); \
-	$(MAKE) --no-print-directory clean; \
-	$(MAKE) --no-print-directory BUILD_TYPE=$$bt TARGET=$$tgt build; \
-	$(MAKE) --no-print-directory BUILD_TYPE=$$bt TARGET=$$tgt run
+	@echo "$(COLOR3)[ CLEAN ]$(NC) Removing build and bin directories"
+	@rm -rf $(BUILD_DIR_BASE)/ $(BIN_DIR_BASE)/
+	@echo "$(COLOR2)[ DONE  ]$(NC) Clean completed"
 
 rebuild:
 	@$(MAKE) --no-print-directory clean
-	@$(MAKE) --no-print-directory BUILD_TYPE=$(BUILD_TYPE) TARGET=$(TARGET) build
+	@$(MAKE) --no-print-directory BUILD_TYPE=$(BUILD_TYPE) TARGET=$(TARGET) VERBOSE=$(VERBOSE) build
 
-# ============================
-# Install / Uninstall
-# ============================
-BIN_DIR = bin
-
-install: build
-	@mkdir -p $(BIN_DIR)/$(BUILD_TYPE)
-	@cp $(BUILD_DIR_BASE)/$(BUILD_TYPE)/$(TARGET) $(BIN_DIR)/$(BUILD_TYPE)/
-	@printf "${GREEN}=== [$(TARGET)] Installed locally to $(BIN_DIR)/$(BUILD_TYPE)/$(TARGET) ===${NC}\n"
-
-uninstall:
-	@rm -f $(BIN_DIR)/$(BUILD_TYPE)/$(TARGET)
-	@printf "${RED}=== [$(TARGET)] Removed from $(BIN_DIR)/$(BUILD_TYPE)/ ===${NC}\n"
-	@if [ -d "$(BIN_DIR)/$(BUILD_TYPE)" ] && [ -z "$$(ls -A $(BIN_DIR)/$(BUILD_TYPE))" ]; then \
-		rmdir "$(BIN_DIR)/$(BUILD_TYPE)"; \
-		printf "${YELLOW}=== Removed empty directory $(BIN_DIR)/$(BUILD_TYPE)/ ===${NC}\n"; \
-	fi
-	@if [ -d "$(BIN_DIR)" ] && [ -z "$$(ls -A $(BIN_DIR))" ]; then \
-		rmdir "$(BIN_DIR)"; \
-		printf "${YELLOW}=== Removed empty directory $(BIN_DIR)/ ===${NC}\n"; \
-	fi
-
-sysinstall: build
-	@sudo cp $(BUILD_DIR_BASE)/$(BUILD_TYPE)/$(TARGET) /usr/local/bin/
-	@printf "${GREEN}=== [$(TARGET)] Installed system-wide to /usr/local/bin/$(TARGET) ===${NC}\n"
-
-sysuninstall:
-	@sudo rm -f /usr/local/bin/$(TARGET)
-	@printf "${RED}=== [$(TARGET)] Removed system-wide /usr/local/bin/$(TARGET) ===${NC}\n"
+rerun:
+	@$(MAKE) --no-print-directory clean
+	@$(MAKE) --no-print-directory BUILD_TYPE=$(BUILD_TYPE) TARGET=$(TARGET) VERBOSE=$(VERBOSE) build
+	@$(MAKE) --no-print-directory BUILD_TYPE=$(BUILD_TYPE) TARGET=$(TARGET) VERBOSE=$(VERBOSE) run
 
 # ============================
 # Distribution
 # ============================
 dist: clean
-	@tar -czf $(PROJECT).tar.gz src CMakeLists.txt Makefile CMakePresets.json
-	@printf "${GREEN}=== [$(PROJECT)] Created archive $(PROJECT).tar.gz ===${NC}\n"
+	@echo "$(COLOR1)[ DIST  ]$(NC) Creating distribution archive"
+	@tar -czf $(PROJECT)-$(BUILD_TYPE).tar.gz --exclude='.git' --exclude='build' --exclude='bin' \
+		src CMakeLists.txt Makefile CMakePresets.json
+	@echo "$(COLOR2)[ DONE  ]$(NC) Archive created: $(PROJECT)-$(BUILD_TYPE).tar.gz"
 
 # ============================
 # Help
 # ============================
 help:
-	@printf "${YELLOW}Usage: make <target> [VARIABLE=value]${NC}\n\n"
-	@printf "${GREEN}Auto-detected targets:${NC}\n"
-	@$(foreach t,$(ALL_TARGETS),printf "  $(t)\n";)
-	@printf "\n${GREEN}Build targets:${NC}\n"
-	@printf "  build      - Build current target with selected BUILD_TYPE\n"
-	@printf "  debug      - Build in debug mode\n"
-	@printf "  release    - Build in release mode\n"
-	@printf "  detect     - Show all auto-detected targets with details\n\n"
-	@printf "${GREEN}Run targets:${NC}\n"
-	@printf "  run        - Run last built binary\n"
-	@printf "  refresh    - Rebuild only if needed and run\n\n"
-	@printf "${GREEN}Clean / Rebuild:${NC}\n"
-	@printf "  clean      - Remove build directories\n"
-	@printf "  rerun      - Clean, rebuild, run\n"
-	@printf "  rebuild    - Clean and rebuild\n\n"
-	@printf "${GREEN}Install / Uninstall:${NC}\n"
-	@printf "  install      - Install locally to $(BIN_DIR)/\n"
-	@printf "  uninstall    - Remove local install\n"
-	@printf "  sysinstall   - Install system-wide (/usr/local/bin)\n"
-	@printf "  sysuninstall - Remove system-wide install\n\n"
-	@printf "${GREEN}Distribution:${NC}\n"
-	@printf "  dist       - Create .tar.gz archive of source\n\n"
-	@printf "${GREEN}Variables:${NC}\n"
-	@printf "  TARGET=<name>     - Target to build/run (default: $(TARGET))\n"
-	@printf "  BUILD_TYPE=<debug/release> - Build type (default: $(BUILD_TYPE))\n"
-	@printf "  JOBS=<N>          - Parallel build jobs (default: all cores)\n"
+	@echo "$(COLOR1)┌──────────────────────────────────────────────────────────$(NC)"
+	@echo "$(COLOR1)│ Usage: make [TARGET] [BUILD_TYPE] [VARIABLE] <command> $(NC)"
+	@echo "$(COLOR1)├──────────────────────────────────────────────────────────$(NC)"
+	@echo "$(COLOR1)│ Commands:$(NC)"
+	@echo "$(COLOR1)│  help          - Show this help (default) $(NC)"
+	@echo "$(COLOR1)│  detect        - List all detected targets $(NC)"
+	@echo "$(COLOR1)│  build         - Build current target $(NC)"
+	@echo "$(COLOR1)│  debug         - Build in debug mode $(NC)"
+	@echo "$(COLOR1)│  release       - Build in release mode $(NC)"
+	@echo "$(COLOR1)│  run           - Run built target $(NC)"
+	@echo "$(COLOR1)│  refresh       - Rebuild and run last target $(NC)"
+	@echo "$(COLOR1)│  clean         - Remove build artifacts $(NC)"
+	@echo "$(COLOR1)│  rebuild       - Clean and rebuild $(NC)"
+	@echo "$(COLOR1)│  rerun         - Clean, build, and run $(NC)"
+	@echo "$(COLOR1)│  dist          - Create distribution archive $(NC)"
+	@echo "$(COLOR1)├──────────────────────────────────────────────────────────$(NC)"
+	@echo "$(COLOR1)│ Variables: $(NC)"
+	@echo "$(COLOR1)│  TARGET        - Target to work with (default: $(TARGET)) $(NC)"
+	@echo "$(COLOR1)│  BUILD_TYPE    - Build type (debug/release) (default: $(BUILD_TYPE)) $(NC)"
+	@echo "$(COLOR1)│  JOBS          - Parallel jobs (default: $(JOBS)) $(NC)"
+	@echo "$(COLOR1)│  PROJECT       - Project name (default: $(PROJECT)) $(NC)"
+	@echo "$(COLOR1)│  VERBOSE       - Verbose output (0=quiet, 1=verbose) (default: $(VERBOSE)) $(NC)"
+	@echo "$(COLOR1)└──────────────────────────────────────────────────────────$(NC)"

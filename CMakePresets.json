@@ -2,63 +2,62 @@
     "version": 3,
     "cmakeMinimumRequired": {
         "major": 3,
-        "minor": 23,
+        "minor": 28,
         "patch": 0
     },
     "configurePresets": [
         {
-            "name": "debug",
-            "hidden": false,
-            "description": "Debug build with maximum warnings and debug info",
+            "name": "base",
+            "hidden": true,
             "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_CXX_STANDARD": "23",
+                "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+                "CMAKE_CXX_EXTENSIONS": "OFF",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "debug",
+            "displayName": "Debug Build",
+            "description": "Debug build with maximum warnings and debug info",
+            "inherits": "base",
             "binaryDir": "${sourceDir}/build/debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CPP_STANDARD": "23",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin/debug"
             },
             "environment": {
-                "CC": "/usr/bin/gcc",
-                "CXX": "/usr/bin/g++"
+                "CC": "gcc",
+                "CXX": "g++"
             }
         },
         {
             "name": "release",
-            "hidden": false,
+            "displayName": "Release Build",
             "description": "Release build with optimizations",
-            "generator": "Unix Makefiles",
+            "inherits": "base",
             "binaryDir": "${sourceDir}/build/release",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "CPP_STANDARD": "23",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin/release"
             },
             "environment": {
-                "CC": "/usr/bin/gcc",
-                "CXX": "/usr/bin/g++"
-            }
-        },
-        {
-            "name": "Configure preset using toolchain file",
-            "displayName": "Configure preset using toolchain file",
-            "description": "Sets Ninja generator, build and install directory",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_TOOLCHAIN_FILE": "",
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
+                "CC": "gcc",
+                "CXX": "g++"
             }
         }
     ],
     "buildPresets": [
         {
             "name": "debug",
+            "displayName": "Build Debug",
             "configurePreset": "debug",
             "jobs": 0
         },
         {
             "name": "release",
+            "displayName": "Build Release",
             "configurePreset": "release",
             "jobs": 0
         }

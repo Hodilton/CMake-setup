@@ -49,12 +49,13 @@ endif
 # ============================
 # Color Definitions (Easy to customize)
 # ============================
-COLOR1 := \033[0;36m  # Cyan
-COLOR2 := \033[0;32m  # Green
-COLOR3 := \033[1;33m  # Yellow
-COLOR4 := \033[0;34m  # Blue
-COLOR5 := \033[0;31m  # Red
-NC     := \033[0m     # No Color
+# COLOR1=Cyan COLOR2=Green COLOR3=Yellow COLOR4=Blue COLOR5=Red NC=No Color
+COLOR1 := \033[0;36m
+COLOR2 := \033[0;32m
+COLOR3 := \033[1;33m
+COLOR4 := \033[0;34m
+COLOR5 := \033[0;31m
+NC     := \033[0m
 
 # ============================
 # Phony targets
